@@ -13,25 +13,33 @@
 3. В файле syslog_radius_router.py указать абсолютный путь к файлу конфигурации initial.conf
 4. В конфигурации syslog-ng (/etc/syslog-ng/syslog-ng.conf или другой файл, если используется) источник, фильтры и назначение: 
 ```
-source s_net { udp(ip(0.0.0.0) port(514)); };
+source s_net {
+  udp(ip(0.0.0.0) port(514));
+ };
 
-filter f_ise_host     {    (
-                                host("10.31.34.101")
-                                );
-                        };
+filter f_ise_host {
+  (
+    host("10.31.34.101")
+   );
+};
 
-filter f_ise_auth { message("Authentication succeeded"); };
+filter f_ise_auth {
+  message("Authentication succeeded");
+};
 
-destination d_python { program("python3 -u /home/python-radius/syslog_radius_router.py"
+destination d_python {
+  program("python3 -u /home/python-radius/syslog_radius_router.py"
         flags(no_multi_line)
         flush_timeout(1000)
-); };
+  );
+};
 
-log { source(s_net);
+log {
+  source(s_net);
       filter(f_ise_host);
       filter(f_ise_auth);
       destination(d_python);
-};
+  };
 ```
 5. Перезагрузить службу 
 ```
