@@ -22,7 +22,7 @@ filter f_ise_host     {    (
 
 filter f_ise_auth { message("Authentication succeeded"); };
 
-destination d_python { program("python3 -u /home/python-radius/syslog_radius_ro$
+destination d_python { program("python3 -u /home/python-radius/syslog_radius_router.py"
         flags(no_multi_line)
         flush_timeout(1000)
 ); };
