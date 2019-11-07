@@ -27,7 +27,6 @@ class Send2Radius(object):
 
     def __init__(self, conf_path, logger):
         """Инициализация объекта.
-
         :conf_path: - абсолютный путь к файлу конфигурации.
         В файле конфигурации задаются искомые в запросе параметры,
         а также соотвествующие им атрибуты словаря Radius.
@@ -53,7 +52,6 @@ class Send2Radius(object):
     def send_message(self, text, radius_ip, secret, dict_path):
         """
         Публичный метод, отправляющий сообщение на сервер Radius.
-
         :text: - строка, передаваемая от syslog-ng
         (через стандартный входной поток stdin).
         :radius_ip: - адресс сервера Radius.
