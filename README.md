@@ -5,10 +5,10 @@
 - /dicts - каталоги со стандартными словарями Radius
 - /fortigator - пакет с модулями python
 - /schemes - схемы работы приложения
-- initial.conf - фал конфигурации скрипта python
+- initial.conf - файл конфигурации скрипта python
 - syslog_sysrador_program.py - скрипт, запускающийся напрямую из сервера syslog-ng
 - terminal_sysrador_program.py - скрипт, запускающийся из консоли linux
-- user_creator_multiproc.py - скприт для создания определенного количества пользователей User00001
+- user_creator_multiproc.py - скрипт, для создания определенного количества событий логирования (User00001 и их IP)
 - user_creator_real_data.py - скрипт, генерирующий реальных пользователей
 
 ## Предварительная настройка системы
@@ -72,8 +72,8 @@ Acct-Status-Type=Start
 #### В данном разделе задайте IP адрес, секретный ключ и полный путь к словарям Radius:
 ```
 [RADIUS]
-IP = 10.31.46.196
-SECRET = q1q1q1Q!Q!Q!
+IP = 10.0.0.1
+SECRET = P@ssw0rd
 DICT_PATH = /home/python-radius/dicts/dictionary
 ```
 
@@ -92,12 +92,12 @@ ATTR = User-Name
 Измените имя подразделения LDAP_OU (Organizational Unit) и доменное имя LDAP_DOMAIN:
 ```
 [LDAP]
-LDAP_URL = ldap://10.31.46.139:389
-LDAP_USERNAME = administrator@fortidomain.local
-LDAP_PSWD = q1q1q1Q!Q!Q!
+LDAP_URL = ldap://10.0.0.2:389
+LDAP_USERNAME = administrator@testdomain.local
+LDAP_PSWD = P@ssw0rd
 LDAP_ATTR = userPrincipalName
 LDAP_OU = HQ
-LDAP_DOMAIN = fortidomain.local
+LDAP_DOMAIN = testdomain.local
 ```
 
 ## Запуск скрипта через syslog-ng
@@ -192,4 +192,16 @@ python3 terminal_sysrador_program.py
 ### Проверьте результат
 
 
+# Структура проекта
+## Пакет fortigator содержит следующие модули:
+- attributor.py - модуль формирующий структуру аттрибутов из файла конфигурации и текстовой строки
+- domainator.py - проверяет правильно ли задано имя пользователя и доменю Если имя пользователя имеет вид "domain.com\user", то атрибуты отправляются в радиус. Если имя пользователя имеет вид "user" к нему добавляется указанный в конфиге домен "@domain.com". Если логин имеет вид "user@doman.com", то он отправляется на ldap сервер. Если это является userPrincipalName, то логин добавляется в атрибуты и отправляется на сервер Radius. Если не UPN, то проверяется не mail ли это, и получается UPN.
+- ldaper.py - клиент ldap для связи с сервером AD
+- rador.py - клиент Radiusдля связи с сервером Radius
+- sysrador.py - модуль, отрабатывающий связную логику
 
+## Принипиальная схема работы
+![scheme small](http://ninucium.ru/random_files/algorythm_scheme_small.png)
+
+## Схема работы модуля sysrador
+![scheme small](http://ninucium.ru/random_files/algorythm_scheme_big.png)
