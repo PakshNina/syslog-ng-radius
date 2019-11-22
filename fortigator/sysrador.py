@@ -20,7 +20,6 @@ class SysRador(object):
         config.read(path_to_config_file)
 
         # Get line from source
-        self.text_line = self._get_sourse(config)
         logging.basicConfig(filename=config['RESULT_LOG']['LOG_PATH'], format='%(asctime)s %(message)s')
 
         # Attributor settings
@@ -49,23 +48,21 @@ class SysRador(object):
         )
         self.rador = Rador(radius_settings_tuple, logging)
 
-    def send(self):
-        for line in self.text_line:
-            if line:
-                self._do_line(line)
-
-    def _get_sourse(self, config):
-        with open(config['SOURCE_MESSAGE']['LOG_PATH'], 'r') as file:
-            return file.read().split('\n')
-
-    def _do_line(self, line):
-        raw_attributes = self.attributor.create_attributes(self.needed_attribute, line)
-        if raw_attributes:
-            attributes = self.domanaitor.get_attributes(raw_attributes)
-            if attributes:
-                self.rador.send_message(attributes)
+    def send(self, line):
+        """Works with single line."""
+        if line:
+            raw_attributes = self.attributor.create_attributes(self.needed_attribute, line)
+            if raw_attributes:
+                attributes = self.domanaitor.get_attributes(raw_attributes)
+                if attributes:
+                    self.rador.send_message(attributes)
 
 
 if __name__ =='__main__':
     sysrad = SysRador('../initial.conf')
+    source_file = open('/var/log/test.log', 'r')
+    syslog_lines = source_file.read().split('\n')
+    source_file.close()
+    for line in syslog_lines:
+        sysrad.send(line)
     sysrad.send()
