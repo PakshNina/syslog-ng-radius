@@ -12,7 +12,6 @@ r'fortidomain\\d.beckham',
 'f.smolov@fortidomain.local',
 'i.akinfeev@fortidomain.local',
 'j.klopp@fortidomain.local',
-'fsso-sa@fortidomain.local',
 'f5_auditor@fortidomain.local']
 
 def make_string(x, name_list):
