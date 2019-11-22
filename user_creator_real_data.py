@@ -4,7 +4,7 @@ import os
 
 name_list = ['surfservice',
 r'fortidomain.local\\r.carlos',
-'fortidomain/d.beckham',
+r'fortidomain\\d.beckham',
 'fgservice',
 'l.figo@fortidomain.local', r'fortidomain\\z.zidan',
 'cpservice@fortidomain.local',

@@ -27,18 +27,17 @@ ERROR_TEMPLATE = 'Error has been occured in {0} with error {1} on line {2}'
 class Domainator(object):
     """Checks User-Name: if it's legimate UserPrincipalName."""
 
-    def __init__(self, logging, config):
+    def __init__(self, needed_attribute, ldap_settings_tuple, logging):
         """Init object with target attribute (User-Name) and ldap settings."""
-        self.needed_attribute = config['TARGET_ATTR']['ATTR']
+        self.needed_attribute = needed_attribute
         self.logging = logging
-        self.config = config
-        ldap_conf = self.config[LDAP]
+        self.domain = ldap_settings_tuple[3]
         self.ldap = Ldaper(
-            ldap_conf['LDAP_URL'],
-            ldap_conf['LDAP_USERNAME'],
-            ldap_conf['LDAP_PSWD'],
-            ldap_conf['LDAP_DOMAIN'],
-            ldap_conf['LDAP_OU'],
+            ldap_settings_tuple[0],
+            ldap_settings_tuple[1],
+            ldap_settings_tuple[2],
+            ldap_settings_tuple[3],
+            ldap_settings_tuple[4],
             self.logging,
         )
 
@@ -52,14 +51,13 @@ class Domainator(object):
 
     def _check_name(self):
         # Check if the name-attribute is right
-        good_domain = r'[a-zA-Z0-9._-]+[\\/][a-zA-Z0-9._-]+'
+        good_domain = r'[a-zA-Z0-9._-]+\[a-zA-Z0-9._-]+'
         suspect_domain = '[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+[.]?[a-zA-Z0-9_.-]+'
         no_domain = '[a-zA-Z0-9._-]+'
         try:
             self.target_user = self.attributes_input_dict[
                 self.needed_attribute
             ]
-            
         except Exception as err:
             _, _, exc_tb = sys.exc_info()
             self.logging.error(
@@ -71,7 +69,6 @@ class Domainator(object):
             )
 
         if re.match(good_domain, self.target_user):
-            print(self.target_user)
             return self.attributes_input_dict
 
         if re.match(suspect_domain, self.target_user):
@@ -87,7 +84,7 @@ class Domainator(object):
                 self.needed_attribute
             ] = '{0}@{1}'.format(
                 self.target_user,
-                self.config[LDAP]['LDAP_DOMAIN'],
+                self.domain,
             )
             return self.attributes_input_dict
         else:

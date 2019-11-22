@@ -5,7 +5,7 @@
 import re
 import sys
 import logging
-import configparser
+
 import pyrad.packet
 from pyrad.client import Client
 from pyrad.dictionary import Dictionary
@@ -17,12 +17,12 @@ class Rador(object):
 
     packet_send = 0
 
-    def __init__(self, config, logging):
+    def __init__(self, radius_settings_tuple, logging):
         """Инициализация объекта из файла ibitial.conf."""
         self.logging = logging
-        self.radius_ip = config['RADIUS']['IP']
-        self.radius_secret = config['RADIUS']['SECRET']
-        self.radius_dict_path = config['RADIUS']['DICT_PATH']
+        self.radius_ip = radius_settings_tuple[0]
+        self.radius_secret = radius_settings_tuple[1]
+        self.radius_dict_path = radius_settings_tuple[2]
         self.srv = Client(
             server=self.radius_ip,
             secret=self.radius_secret.encode(),

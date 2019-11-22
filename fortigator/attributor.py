@@ -23,12 +23,12 @@ class AttributorException(Exception):
 class Attributor(object):
     """Creates attributes from text line."""
 
-    def __init__(self, config, logger):
+    def __init__(self, dict_attribute_tuples, logger):
         """Init Attributor key in dictionaries."""
         self.logging = logger
         try:
-            self.alies_input_dict = config['ALIES']
-            self.additional_input_dict = config['ADDITIONAL FIELDS']
+            self.alies_input_dict = dict_attribute_tuples[0]
+            self.additional_input_dict = dict_attribute_tuples[1]
         except Exception as err:
             _, _, exc_tb = sys.exc_info()
             raise AttributorException(self, err, exc_tb.tb_lineno)
@@ -53,12 +53,12 @@ class Attributor(object):
         """Object representaion."""
         return 'Attributor class'
 
-    def create_attributes(self, text_line):
+    def create_attributes(self, needed_attribute, text_line):
         """Create result dict with attributes and values to send."""
         self.result_dict = {}
         self._search(text_line)
         if self.result_dict:
-            if 'User-Name' in self.result_dict:
+            if needed_attribute in self.result_dict:
                 return self.result_dict
         self.logging.error(ERROR_TEMPLATE.format(self.result_dict, text_line, 'User-Name'))
 
