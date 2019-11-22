@@ -1,66 +1,67 @@
-# Инструкция для запуска скрипта пересылки сообщений между сервером Syslog-ng и Fortinet Single Sign On
-Данный скрипт используется в связке с syslong-ng сервером и служит для пересылки событий логирования между сервером Syslog-ng и Fortinet Single Sign On.
+[Ссылка на русскую документацию](README_RUS.md)
 
-## Описание файлов и каталогов
-- /dicts - каталоги со стандартными словарями Radius
-- /fortigator - пакет с модулями python
-- /schemes - схемы работы приложения
-- initial.conf - файл конфигурации скрипта python
-- syslog_sysrador_program.py - скрипт, запускающийся напрямую из сервера syslog-ng
-- terminal_sysrador_program.py - скрипт, запускающийся из консоли linux
-- user_creator_multiproc.py - скрипт, для создания определенного количества событий логирования (User00001 и их IP)
-- user_creator_real_data.py - скрипт, генерирующий реальных пользователей
+# Python script to route login events from Syslog-ng server to Fortinet Single Sign On Agent
+The script is used for routing login events from syslog-ng server to FSSO radius server for user accounting purposes.
 
-## Предварительная настройка системы
+## Files and directories description
+- /dicts - standart radius dictionaries
+- /fortigator - python modules
+- /schemes - script work schemes
+- initial.conf - configurator file, that sets up python script (ldap, radius, logging)
+- syslog_sysrador_program.py - python script for syslog-ng login events handling (runs from syslog-ng destination settings)
+- terminal_sysrador_program.py - script for linux console execution
+- user_creator_multiproc.py - script for user login events generating (starting from User00001 and 10.0.0.1 to setted value)
+- user_creator_real_data.py - script, that generates real users (from written inside list of users)
 
-### Проверьте, что у вас установлен Python третьей версии:
+## System preconfiguration
+### Make sure that you have python v3 installed (from 3.6)
 ```
 python3 –V
 ```
 
-### Установите утилиту pip для python3:
+### Install pip util for python3:
 ```
 apt install python3-pip
 ```
 
-#### Если возникает ошибка ‘Unable to locate package python-pip’, в файл sources.list добавьте в конце каждой строчки тег universe:
+#### If you have problems with pip installation ‘Unable to locate package python-pip’, add tag `universe` at the end of the each `sources.list` entry:
 ```
 deb http://archive.ubuntu.com/ubuntu bionic-security main universe 
 deb http://archive.ubuntu.com/ubuntu bionic-updates main universe
 deb http://archive.ubuntu.com/ubuntu bionic main universe
 ```
 
-#### Обновите пакеты:
+#### Update OS packets:
 ```
 apt update
 ```
 
-#### Установите pip:
+#### Install pip:
 ```
-apt install python-pip
+apt install python3-pip
 ```
 
-### Установите пакеты для работы с библиотекой ldap:
+### Install ldap library packages:
 ```
 apt install build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils valgrind
 ```
 
-## Установка модулей python и подготовка скрипта
+## Python modules installatiion and script configuration
 
-### Установите модули python3
+### Install python3 modules
 ```
 pip install python-ldap pyrad configparser
 ```
 
-### Склонируйте с помощью git или скачайте скрипт:
+### Clone with git or download script:
 https://github.com/PakshNina/syslog-ng-radius
 
-### Перейдите в скачанную папку.
-Откройте файл конфигурации скрипта initial.conf:
+### Go to the downloaded dir.
+Open script's configguration file `initial.conf`:
 ```
 nano initial.conf
 ```
-#### Данные поля оставьте без изменений
+#### Leave these options without changes
 ```
 [ALIES]
 User-Name=User-Name
@@ -69,7 +70,7 @@ Calling-Station-ID=Framed-IP-Address
 Acct-Status-Type=Start
 ```
 
-#### В данном разделе задайте IP адрес, секретный ключ и полный путь к словарям Radius:
+#### Add radius server informationL IP, secret key, absolute path to Radius dictionaries:
 ```
 [RADIUS]
 IP = 10.0.0.1
@@ -77,19 +78,19 @@ SECRET = P@ssw0rd
 DICT_PATH = /home/python-radius/dicts/dictionary
 ```
 
-#### В данном разделе задайте путь к логу, в который скрипт python записывает результаты операций
+#### Set up abolute path to result log file
 ```
 [RESULT_LOG]
 LOG_PATH = /var/log/syslog-python.log
 ```
 
-#### Данный раздел не изменяйте
+#### Do not change that part
 ```
 [TARGET_ATTR]
 ATTR = User-Name
 ```
-#### В данном раздела задайте настройки ldap сервера: IP-адрес, логин, пароль администратора. LDAP_ATTR оставьте без изменений.
-Измените имя подразделения LDAP_OU (Organizational Unit) и доменное имя LDAP_DOMAIN:
+#### Set up ldap server settings: IP-address, login, password. Keep out without changes LDAP_ATTR.
+Change LDAP_OU Organizational Unit and domain name LDAP_DOMAIN:
 ```
 [LDAP]
 LDAP_URL = ldap://10.0.0.2:389
@@ -100,17 +101,17 @@ LDAP_OU = HQ
 LDAP_DOMAIN = testdomain.local
 ```
 
-## Запуск скрипта через syslog-ng
+## Running script from syslog-ng
 
-### Задайте настройки syslog-ng, например, по пути:
+### Change syslog-ng configuration:
 ```
-nano /etc/syslog-ng/conf.d/ise.conf
+nano /etc/syslog-ng/syslog-ng.conf
 ```
-Полный конфиг:
+Full config:
 ```
 source s_net { udp(ip(0.0.0.0) port(514)); };
 filter f_ise_host     {    (
-                                host("10.31.34.101") or
+                                host("10.0.0.10") or
                                 host("127.0.0.1")
                                 );
                         };
@@ -128,13 +129,13 @@ log {   source(s_net);
         destination(d_python);
 };
 ```
-Вместо /var/log/test.log – укажите путь к логу, куда syslog-ng отправляет события. Вместо /home/python-radius/syslog_sysrador_program.py – полный путь к файлу python syslog_sysrador_program.py.
+Instead of path /var/log/test.log – use path to your syslog-ng events destination. Instead of /home/python-radius/syslog_sysrador_program.py – use absolute path to python syslog_sysrador_program.py script.
 
-### Откройте редактор файла syslog_sysrador_program.py:
+### Open syslog_sysrador_program.py in redactor:
 ```
 nano syslog_sysrador_program.py
 ```
-На строчке sysrad = SysRador('/home/python-radius/initial.conf') вместо '/home/python-radius/initial.conf' укажите полный путь к файлу initial.conf :
+On line `sysrad = SysRador('/home/python-radius/initial.conf')` change `/home/python-radius/initial.conf` to absolute file to initial.conf file:
 
 ```
 from fortigator.sysrador import SysRador
@@ -149,59 +150,62 @@ if __name__ =='__main__':
         raise Exception('Problem occured: {0}'.format(err))
 ```
 
-### Сгенерируйте вручную события логирования через терминал.
+### Generating login events from console
 
-#### Для пользователей без доменного имени:
+#### For users without domain name:
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=surfservice, Calling-Station-ID=10.0.0.1
 ```
-#### Для пользователей со стандартным UDN:
+#### For users with userPrincipalName (UDN):
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=cpservice@fortidomain.local, Calling-Station-ID=10.0.0.2
 ```
-#### Для пользователей с e-mail вместо логина:
+#### For users with mail instead of UDN:
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=figoluis@fortidomain.local, Calling-Station-ID=10.0.0.3
 ```
-#### Для пользователей с альтернативной записью домена
+#### For users with alternativy domain notation:
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=fortidomain.local\\r.carlos, Calling-Station-ID=10.0.0.4
 ```
-### Проверьте результат
+### Check result
 
-## Запуск скрипта через консоль
+## Running script from console
 
-### Очистка лога:
+### Clear syslog-ng destination log:
 ```
 rm /var/log/test.log
 ```
 
-### Закомментируйте в конфигурации syslog-ng строчку логирования:
+### Comment python destination line in syslog-ng configuration:
 ```
-# destination(d_NS_ISE);
+#        destination(d_python);
 ```
-### Перейдите в каталог со скриптами (syslog-ng-radius) и запустите генератор заходов пользователей, где после –n идет количество генерируемых пользователей:
+### Go to dir with scripts (syslog-ng-radius) and run user login events regerator. After –n type in numbers of generated users:
 ```
 python3 user_creator_multiproc.py -n 400
 ```
-### Запустите скрипт из каталога со скриптами:
+### Run terminal script:
 ```
 python3 terminal_sysrador_program.py
 ```
 
-### Проверьте результат
+### Check out the results:
+```
+tail -f /var/log/syslog-python.log
+```
 
 
-# Структура проекта
-## Пакет fortigator содержит следующие модули:
-- attributor.py - модуль формирующий структуру аттрибутов из файла конфигурации и текстовой строки
-- domainator.py - проверяет правильно ли задано имя пользователя и доменю Если имя пользователя имеет вид "domain.com\user", то атрибуты отправляются в радиус. Если имя пользователя имеет вид "user" к нему добавляется указанный в конфиге домен "@domain.com". Если логин имеет вид "user@doman.com", то он отправляется на ldap сервер. Если это является userPrincipalName, то логин добавляется в атрибуты и отправляется на сервер Radius. Если не UPN, то проверяется не mail ли это, и получается UPN.
-- ldaper.py - клиент ldap для связи с сервером AD
-- rador.py - клиент Radiusдля связи с сервером Radius
-- sysrador.py - модуль, отрабатывающий связную логику
+# Project structure
+## Fortigator package has following modules:
+- attributor.py - module that forms attributes based on initial.conf settings and text line
+- domainator.py - using regular expressions cheack out if the user name is in particular format. If user name is "domain.com\user", then attributes sends to radius without modification. If user has simple "user" format, then к domain is added "@domain.com". If login is "user@doman.com" alike, then it is send to ldap server, to check if it is an mail. And if so, ldap client requests proper userPrincipalName.
+- ldaper.py - ldap client to connect with AD (ldap) server
+- rador.py - Radius client
+- sysrador.py - module with final logic
 
-## Принипиальная схема работы
+## Principal simple work scheme
 ![scheme small](http://ninucium.ru/random_files/algorythm_scheme_small.png)
 
-## Схема работы модуля sysrador
-![scheme small](http://ninucium.ru/random_files/algorythm_scheme_big.png)
+## principal sysrador module scheme
+![scheme big](http://ninucium.ru/random_files/algorythm_scheme_big.png)
