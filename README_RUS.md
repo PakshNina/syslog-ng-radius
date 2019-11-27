@@ -49,7 +49,7 @@ apt install build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-uti
 
 ### Установите модули python3
 ```
-pip install python-ldap pyrad configparser
+python3 -m pip install python-ldap pyrad configparser
 ```
 
 ### Склонируйте с помощью git или скачайте скрипт:

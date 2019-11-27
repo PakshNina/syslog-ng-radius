@@ -1,25 +1,71 @@
-[Ссылка на русскую документацию](README_RUS.md)
+[Русская документация](README_RUS.md)
 
-# Python script to route login events from Syslog-ng server to Fortinet Single Sign On Agent
-The script is used for routing login events from syslog-ng server to FSSO radius server for user accounting purposes.
+# Python script syslog-ng-radius
+The script routes login events from syslog-ng server to FSSO Radius server for accounting.
+
+## Script details
+1. Syslog-ng Server gets login events from different sources.
+Server filters logs with "Authentication succeeded" message, and then routes it either to the python script or to the test.log file.
+Whole Message Line looks like:
+```
+Nov 26 15:54:41 127.0.0.1 1 2019-11-26T15:54:41.272535+00:00 ubu-srv-nfs root - - [timeQuality tzKnown="1" isSynced="1" syncAccuracy="213000"] Passed-Authentication: Authentication succeeded, User-Name=d.beckham@fortidomain.local, Calling-Station-ID=10.0.0.2
+```
+2. Python script gets log (from test.log or from stdin line) and parses it.
+It uses attributes from initial.conf file:
+'User-Name' from Message Line replaced with 'User-Name' (Radius attribute, just in case it could be changes to the other attribute).
+'Calling-Station-ID' replaced with 'Framed-IP-Address'
+Also to the Radius packet added constant attribute 'Acct-Status-Type' with value 'Start'.
+3. Script parses 'User-Name' value.
+If 'User-Name' without domain name - domain name added.
+If 'User-Name' looks like 'testdomain.local\user1', script sends it without adjustment.
+If 'User-Name' looks like e-mail "user@testdomain.local", script sends to LDAP server.
+LDAP server checks if it is an UPN (userPrincipalName), if not, LDAP looks for such email and returns userPrincipalName (if not None).
+4. At the end with all verified attributes script creates Radius packet and sends it to Radius server.
+If server replies with 'pyrad.packet.AccountingResponse' - success!
+
 
 ## Files and directories description
-- /dicts - standart radius dictionaries
-- /fortigator - python modules
+- /dicts - standard radius dictionaries
+- /fortigator - python package
 - /schemes - script work schemes
-- initial.conf - configurator file, that sets up python script (ldap, radius, logging)
-- syslog_sysrador_program.py - python script for syslog-ng login events handling (runs from syslog-ng destination settings)
+- initial.conf - configurator file, that sets script settings (ldap, radius, logging)
+- syslog_sysrador_program.py - python script for Syslog-ng login events handling (runs from syslog-ng destination settings)
 - terminal_sysrador_program.py - script for linux console execution
 - user_creator_multiproc.py - script for user login events generating (starting from User00001 and 10.0.0.1 to setted value)
-- user_creator_real_data.py - script, that generates real users (from written inside list of users)
+- user_creator_real_data.py - script that generates real users (from written inside list of users)
 
-## System preconfiguration
+
+# Project structure
+## Fortigator package has following modules:
+- attributor.py - module that forms attributes based on initial.conf settings and text line
+- domainator.py - using regular expressions checks out if the user name is in particular format. If user name is "domain.com\user", then attributes sends to radius without modification. If user has simple "user" format, then к domain is added "@domain.com". If login is "user@doman.com" alike, then it is send to ldap server, to check if it is an mail. If so, ldap client requests proper userPrincipalName.
+- ldaper.py - ldap client to connect with AD (ldap) server
+- rador.py - Radius client
+- sysrador.py - module with final logic
+
+## Principal simple work scheme
+![scheme small](http://ninucium.ru/random_files/algorythm_scheme_small.png)
+
+## principal sysrador module scheme
+![scheme big](http://ninucium.ru/random_files/algorythm_scheme_big.png)
+
+# Used libraries
+For linux:
+
+```build-essential python3-dev libldap2-dev libsasl2-dev ldap-utils valgrind
+```
+for python:
+```
+python3 -m pip install python-ldap pyrad configparser
+```
+
+## System preparation
 ### Make sure that you have python v3 installed (from 3.6)
 ```
 python3 –V
 ```
 
-### Install pip util for python3:
+### Install pip utils for python3:
 ```
 apt install python3-pip
 ```
@@ -43,21 +89,21 @@ apt install python3-pip
 
 ### Install ldap library packages:
 ```
-apt install build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils valgrind
+apt install build-essential python3-dev libldap2-dev libsasl2-dev ldap-utils valgrind
 ```
 
-## Python modules installatiion and script configuration
+## Python modules installation and script configuration
 
 ### Install python3 modules
 ```
-pip install python-ldap pyrad configparser
+python3 -m pip install python-ldap pyrad configparser
 ```
 
 ### Clone with git or download script:
 https://github.com/PakshNina/syslog-ng-radius
 
 ### Go to the downloaded dir.
-Open script's configguration file `initial.conf`:
+Open script's configuration file `initial.conf`:
 ```
 nano initial.conf
 ```
@@ -78,7 +124,7 @@ SECRET = P@ssw0rd
 DICT_PATH = /home/python-radius/dicts/dictionary
 ```
 
-#### Set up abolute path to result log file
+#### Set up absolute path to result log file
 ```
 [RESULT_LOG]
 LOG_PATH = /var/log/syslog-python.log
@@ -131,7 +177,7 @@ log {   source(s_net);
 ```
 Instead of path /var/log/test.log – use path to your syslog-ng events destination. Instead of /home/python-radius/syslog_sysrador_program.py – use absolute path to python syslog_sysrador_program.py script.
 
-### Open syslog_sysrador_program.py in redactor:
+### Open syslog_sysrador_program.py in editor:
 ```
 nano syslog_sysrador_program.py
 ```
@@ -164,7 +210,7 @@ logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=c
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=figoluis@fortidomain.local, Calling-Station-ID=10.0.0.3
 ```
-#### For users with alternativy domain notation:
+#### For users with alternative domain notation:
 ```
 logger -n 127.0.0.1 Passed-Authentication: Authentication succeeded, User-Name=fortidomain.local\\r.carlos, Calling-Station-ID=10.0.0.4
 ```
@@ -179,7 +225,7 @@ rm /var/log/test.log
 
 ### Comment python destination line in syslog-ng configuration:
 ```
-#        destination(d_python);
+# destination(d_python);
 ```
 ### Go to dir with scripts (syslog-ng-radius) and run user login events regerator. After –n type in numbers of generated users:
 ```
@@ -194,18 +240,3 @@ python3 terminal_sysrador_program.py
 ```
 tail -f /var/log/syslog-python.log
 ```
-
-
-# Project structure
-## Fortigator package has following modules:
-- attributor.py - module that forms attributes based on initial.conf settings and text line
-- domainator.py - using regular expressions cheack out if the user name is in particular format. If user name is "domain.com\user", then attributes sends to radius without modification. If user has simple "user" format, then к domain is added "@domain.com". If login is "user@doman.com" alike, then it is send to ldap server, to check if it is an mail. And if so, ldap client requests proper userPrincipalName.
-- ldaper.py - ldap client to connect with AD (ldap) server
-- rador.py - Radius client
-- sysrador.py - module with final logic
-
-## Principal simple work scheme
-![scheme small](http://ninucium.ru/random_files/algorythm_scheme_small.png)
-
-## principal sysrador module scheme
-![scheme big](http://ninucium.ru/random_files/algorythm_scheme_big.png)
