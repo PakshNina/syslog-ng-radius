@@ -64,7 +64,7 @@ class Domainator(object):
                 ERROR_TEMPLATE.format(
                     self.attributes_input_dict,
                     self.target_user,
-                    exc_tb.tb_lineno,
+                    err,
                 ),
             )
 

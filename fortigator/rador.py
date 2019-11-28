@@ -2,34 +2,29 @@
 
 """Script routering Syslog-ng events to Radius."""
 
-import re
-import sys
-import logging
-
 import pyrad.packet
 from pyrad.client import Client
 from pyrad.dictionary import Dictionary
-import time
-from multiprocessing import Pool
+
 
 class Rador(object):
     """Класс для пересылки сообщений из Syslog-ng в Radius."""
 
-    packet_send = 0
-
     def __init__(self, radius_settings_tuple, logging):
         """Инициализация объекта из файла ibitial.conf."""
+        self.packet_send = 0
         self.logging = logging
-        self.radius_ip = radius_settings_tuple[0]
-        self.radius_secret = radius_settings_tuple[1]
-        self.radius_dict_path = radius_settings_tuple[2]
+        radius_ip = radius_settings_tuple[0]
+        radius_secret = radius_settings_tuple[1]
+        radius_dict_path = radius_settings_tuple[2]
         self.srv = Client(
-            server=self.radius_ip,
-            secret=self.radius_secret.encode(),
-            dict=Dictionary(self.radius_dict_path),
+            server=radius_ip,
+            secret=radius_secret.encode(),
+            dict=Dictionary(radius_dict_path),
         )
 
     def send_message(self, attributes_dict):
+        """Send radius packet."""
         self.attributes_dict = attributes_dict
         self.req = self.srv.CreateAcctPacket()
         # Создаем запрос по всем атрибутам и их значениям
@@ -43,4 +38,4 @@ class Rador(object):
             self.logging.error('Successfully sent Acct packet to server.')
         else:
             # Иначе пишем в лог ошибку
-            self.logging.error('Error with sending packet. Wrong server reply. Rador< send_message')
+            self.logging.error('Error with sending packet.')

@@ -60,7 +60,13 @@ class Attributor(object):
         if self.result_dict:
             if needed_attribute in self.result_dict:
                 return self.result_dict
-        self.logging.error(ERROR_TEMPLATE.format(self.result_dict, text_line, 'User-Name'))
+        self.logging.error(
+            ERROR_TEMPLATE.format(
+                self.result_dict,
+                text_line,
+                self,
+            ),
+        )
 
     def _search(self, text_line):
         """Adding elements to."""

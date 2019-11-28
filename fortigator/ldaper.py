@@ -67,13 +67,10 @@ class Ldaper(object):
             self.target_user,
             )
 
-        final_user = self._make_request(filtering)
-        if final_user:
+        final_user_message = self._make_request(filtering)
+        if final_user_message:
             try:
-                for line in final_user:
-                    for element in list(line):
-                        if isinstance(element, dict):
-                            return element[Ldaper.user_tag][0].decode()
+                return self._unpack_message(final_user_message)
             except Exception as err:
                 _, _, exc_tb = sys.exc_info()
                 self.logging.error(
@@ -84,9 +81,15 @@ class Ldaper(object):
                     ),
                 )
 
+    def _unpack_message(self, message):
+        for line in message:
+            for element in list(line):
+                if isinstance(element, dict):
+                    return element[Ldaper.user_tag][0].decode()
+
     def _make_request(self, filtering):
         try:
-            final_users = self.ldap.search_s(
+            return self.ldap.search_s(
                 self.basedn,
                 ldap.SCOPE_SUBTREE,
                 filtering,
@@ -108,7 +111,6 @@ class Ldaper(object):
                     exc_tb.tb_lineno,
                 ),
             )
-        return final_users
 
 
 if __name__ == '__main__':
